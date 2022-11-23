@@ -13,7 +13,7 @@ namespace VMTranslator.Interfaces
         /// </summary>
         /// <param name="command"></param>
         /// <returns></returns>
-        string WriteArithmetic(string command);
+        void WriteArithmetic(string command);
         /// <summary>
         /// Returns push/pop command in HACK-assembly.
         /// </summary>
@@ -21,6 +21,6 @@ namespace VMTranslator.Interfaces
         /// <param name="segement"></param>
         /// <param name="index"></param>
         /// <returns></returns>
-        string WritePushPop(string commandType, string segement, int index);
+        void WritePushPop(string commandType, string segement, int index);
     }
 }

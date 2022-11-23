@@ -8,6 +8,13 @@ namespace VMTranslator.Interfaces
 {
     public interface IParser
     {
+
+        /// <summary>
+        /// Removes comments and whitespace from current line.
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        string CleanCurrentLine(string input);
         /// <summary>
         /// Returns current command type.
         /// </summary>
