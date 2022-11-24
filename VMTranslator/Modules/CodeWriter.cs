@@ -52,13 +52,13 @@ namespace VMTranslator.Modules
                         "M=-D\n"); break;
                 case "eq":
                     sw.WriteLine("//eq");
-                    AsmCompare("EQUAL", "D;JEQ"); break;
+                    AsmCompare("D;JEQ"); break;
                 case "gt":
                     sw.WriteLine("//gt");
-                    AsmCompare("GREATER", "D;JGT"); break;
+                    AsmCompare("D;JGT"); break;
                 case "lt":
                     sw.WriteLine("//lt");
-                    AsmCompare("LESS", "D;JLT"); break;
+                    AsmCompare("D;JLT"); break;
                 case "and":
                     sw.WriteLine("//and");
                     AsmPop();
@@ -204,24 +204,24 @@ namespace VMTranslator.Modules
                 "@SP\n" +
                 "M=M+1\n");
 
-        private void AsmCompare(string label, string jumpCommand)
+        private void AsmCompare(string jumpCommand)
         {
             AsmPop();
             AsmGet();
             sw.Write(
                 "D=M-D\n" +
-                $"@{label}{labelCounter}\n" +
+                $"@COMPARE{labelCounter}\n" +
                 $"{jumpCommand}\n" +
                 "@SP\n" +
                 "A=M\n" +
                 "M=0\n" +
-                $"@STOP{labelCounter}\n" +
+                $"@STOPCOMPARE{labelCounter}\n" +
                 "0;JMP\n" +
-                $"({label}{labelCounter})\n" +
+                $"@COMPARE{labelCounter})\n" +
                 "@SP\n" +
                 "A=M\n" +
                 "M=-1\n" +
-                $"(STOP{labelCounter})\n" +
+                $"(STOPCOMPARE{labelCounter})\n" +
                 "@SP\n" +
                 "M=M+1\n");
             labelCounter++;
