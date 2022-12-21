@@ -7,7 +7,6 @@ public class Program
         string vmFileName = Path.GetFileNameWithoutExtension(args[0]);
         string outputFilePath = $@"{Path.GetDirectoryName(args[0])}\{vmFileName}.asm"; 
        
-
         StreamReader sr = new(Path.GetFullPath(args[0]));
         Parser parser = new(sr);
 

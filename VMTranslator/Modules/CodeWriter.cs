@@ -173,7 +173,7 @@ namespace VMTranslator.Modules
                         sw.Write(
                             "@addr\n" +
                             "A=M\n" +
-                            "M=D\n"); break;
+                            "M=D\n"); break; 
                 }
             }
             else
