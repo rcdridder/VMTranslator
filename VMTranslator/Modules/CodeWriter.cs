@@ -1,17 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using VMTranslator.Interfaces;
+﻿using VMTranslator.Interfaces;
 
 namespace VMTranslator.Modules
 {
     public class CodeWriter : ICodeWriter
     {
-        private Dictionary<string, string> vmSegments= new Dictionary<string, string>()
+        private Dictionary<string, string> vmSegments = new Dictionary<string, string>()
         {
             { "argument", "ARG" },
             { "local", "LCL" },
@@ -29,7 +22,7 @@ namespace VMTranslator.Modules
 
         public void WriteArithmetic(string command)
         {
-            switch(command)
+            switch (command)
             {
                 case "add":
                     sw.WriteLine("//add");
@@ -83,15 +76,46 @@ namespace VMTranslator.Modules
                         "@SP\n" +
                         "M=M+1\n"); break;
                 default:
-                    throw new ArgumentException("Invalid arithmetic operation.");        
+                    throw new ArgumentException("Invalid arithmetic operation.");
             }
+        }
+
+        public void WriteBranching(string command, string dest)
+        {
+            if (command == "C_LABEL")
+                sw.WriteLine($"({dest})");
+            else if (command == "C_GOTO")
+            {
+                sw.Write(
+                    "@SP\n" +
+                    "M=M-1\n" +
+                    "@SP\n" +
+                    "A=M\n" +
+                    "D=M\n" +
+                    $"@{dest}\n" +
+                    "0;JMP\n");
+
+            }
+            else if (command == "C_IF-GOTO")
+            {
+                sw.Write(
+                    "@SP\n" +
+                    "M=M-1\n" +
+                    "@SP\n" +
+                    "A=M\n" +
+                    "D=M\n" +
+                    $"@{dest}\n" +
+                    "D;JNE\n");
+            }
+            else
+                throw new ArgumentException("Invalid command.");
         }
 
         public void WritePushPop(string commandType, string segment, int index)
         {
             if (commandType == "C_PUSH")
             {
-                switch(segment)
+                switch (segment)
                 {
                     case "constant":
                         sw.WriteLine($"//push constant {index}");
@@ -133,9 +157,9 @@ namespace VMTranslator.Modules
                         AsmPush(); break;
                 }
             }
-            else if(commandType == "C_POP")
+            else if (commandType == "C_POP")
             {
-                switch(segment)
+                switch (segment)
                 {
                     case "pointer":
                         sw.WriteLine($"//pop pointer {index}");
@@ -173,7 +197,7 @@ namespace VMTranslator.Modules
                         sw.Write(
                             "@addr\n" +
                             "A=M\n" +
-                            "M=D\n"); break; 
+                            "M=D\n"); break;
                 }
             }
             else
@@ -183,7 +207,7 @@ namespace VMTranslator.Modules
         private void AsmPop() =>
             sw.Write(
                 "@SP\n" +
-                "M=M-1\n" + 
+                "M=M-1\n" +
                 "@SP\n" +
                 "A=M\n" +
                 "D=M\n");
@@ -194,7 +218,6 @@ namespace VMTranslator.Modules
                 "M=M-1\n" +
                 "@SP\n" +
                 "A=M\n");
-
 
         private void AsmPush() =>
             sw.Write(

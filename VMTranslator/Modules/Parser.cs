@@ -29,26 +29,14 @@ namespace VMTranslator.Modules
 
         public string CommandType(string command)
         {
-            string commandType;
-            if (arithmeticCommands.Contains(command))
+            string[] commandLine = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (commandLine.Length == 1)
                 return "C_ARITHMETIC";
             else
-                commandType = command.Substring(0, command.Length - command.Substring(command.IndexOf(" ")).Length);
-            switch(commandType)
-            {
-                case "push": return "C_PUSH";
-                case "pop": return "C_POP";
-                default: throw new ArgumentException("Invalid command type.");
-            }
+                return $"C_{commandLine[0].ToUpper()}";
         }
 
-        public string Arg1(string command)
-        {
-            if(arithmeticCommands.Contains(command))
-                return command.Substring(command.IndexOf(" ") + 1);
-            else
-                return command.Substring(command.IndexOf(" ") + 1, command.LastIndexOf(" ") - command.IndexOf(" ") - 1);
-        }
+        public string Arg1(string command) => command.Split(' ', StringSplitOptions.RemoveEmptyEntries)[1];
 
         public int Arg2(string command) => Convert.ToInt32(command.Substring(command.LastIndexOf(" ") + 1));
     }
