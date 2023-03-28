@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using VMTranslator.Interfaces;
+﻿using VMTranslator.Interfaces;
 
 namespace VMTranslator.Modules
 {
-    public class Parser: IParser
+    public class Parser : IParser
     {
         private string[] arithmeticCommands =
         {
@@ -31,7 +26,12 @@ namespace VMTranslator.Modules
         {
             string[] commandLine = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             if (commandLine.Length == 1)
-                return "C_ARITHMETIC";
+            {
+                if (commandLine[0] == "return")
+                    return $"C_RETURN";
+                else
+                    return "C_ARITHMETIC";
+            }
             else
                 return $"C_{commandLine[0].ToUpper()}";
         }
