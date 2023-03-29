@@ -14,6 +14,8 @@ namespace VMTranslator.Modules
         private StreamWriter sw;
         private string vmFileName;
         private int labelCounter = 0;
+        private int returnCounter = 0;
+
         public CodeWriter(StreamWriter sw, string vmFileName)
         {
             this.sw = sw;
@@ -78,37 +80,6 @@ namespace VMTranslator.Modules
                 default:
                     throw new ArgumentException("Invalid arithmetic operation.");
             }
-        }
-
-        public void WriteBranching(string command, string dest)
-        {
-            if (command == "C_LABEL")
-                sw.WriteLine($"({dest})");
-            else if (command == "C_GOTO")
-            {
-                sw.Write(
-                    "@SP\n" +
-                    "M=M-1\n" +
-                    "@SP\n" +
-                    "A=M\n" +
-                    "D=M\n" +
-                    $"@{dest}\n" +
-                    "0;JMP\n");
-
-            }
-            else if (command == "C_IF-GOTO")
-            {
-                sw.Write(
-                    "@SP\n" +
-                    "M=M-1\n" +
-                    "@SP\n" +
-                    "A=M\n" +
-                    "D=M\n" +
-                    $"@{dest}\n" +
-                    "D;JNE\n");
-            }
-            else
-                throw new ArgumentException("Invalid command.");
         }
 
         public void WritePushPop(string commandType, string segment, int index)
@@ -202,6 +173,136 @@ namespace VMTranslator.Modules
             }
             else
                 throw new ArgumentException("This is not a C_PUSH or C_POP command.");
+        }
+
+        public void WriteBranching(string command, string dest)
+        {
+            if (command == "C_LABEL")
+            {
+                sw.WriteLine("//label");
+                sw.WriteLine($"({dest})");
+            }
+            else if (command == "C_GOTO")
+            {
+                sw.WriteLine("//goto");
+                sw.Write(
+                    $"@{dest}\n" +
+                    "0;JMP\n");
+
+            }
+            else if (command == "C_IF-GOTO")
+            {
+                sw.WriteLine("//if-goto");
+                sw.Write(
+                    $"@{dest}\n" +
+                    "D;JNE\n");
+            }
+            else
+                throw new ArgumentException("Invalid command.");
+        }
+
+        public void WriteFunction(string functionName, int nVars)
+        {
+            sw.WriteLine("//function label");
+            sw.WriteLine($"({functionName})");
+            sw.WriteLine("//push 0 nVar times");
+            for (int i = 0; i < nVars; i++)
+            {
+                sw.Write(
+                    "@0\n" +
+                    "D=A\n" +
+                    "@SP\n" +
+                    "A=M\n" +
+                    "M=D\n" +
+                    "@SP\n" +
+                    "M=M+1\n"
+                    );
+            }
+        }
+
+        public void WriteCall(string functionName, int nArgs)
+        {
+            sw.WriteLine("//call");
+            sw.Write(
+                $"@{functionName}$ret.{returnCounter}\n" +
+                "D=A\n" +
+                "@SP\n" +
+                "A=M\n" +
+                "M=D\n" +
+                "@SP\n" +
+                "M=M+1\n");
+            string[] segments = { "LCL", "ARG", "THIS", "THAT" };
+            for (int i = 0; i < segments.Length; i++)
+            {
+                sw.Write(
+                    $"@{segments[i]}\n" +
+                    "D=M\n" +
+                    "@SP\n" +
+                    "A=M\n" +
+                    "M=D\n" +
+                    "@SP\n" +
+                    "M=M+1\n");
+            }
+            sw.Write(
+                "@SP\n" +
+                "D=M\n" +
+                "@5\n" +
+                "D=D-A\n" +
+                $"@{nArgs}\n" +
+                "D=D-A\n" +
+                "@ARG\n" +
+                "M=D\n" +
+                "@SP\n" +
+                "D=M\n" +
+                "@LCL\n" +
+                "M=D\n" +
+                $"@{functionName}\n" +
+                $"0;JMP\n" +
+                $"({functionName}$ret.{returnCounter})\n");
+            returnCounter++;
+        }
+
+        public void WriteReturn()
+        {
+            sw.WriteLine("//return");
+            sw.Write(
+                "@LCL\n" +
+                "D=M\n" +
+                "@R13\n" +
+                "M=D\n" +
+                "@5\n" +
+                "A=D-A\n" +
+                "D=M\n" +
+                "@R14\n" +
+                "M=D\n" +
+                "@SP\n" +
+                "M=M-1\n" +
+                "@SP\n" +
+                "A=M\n" +
+                "D=M\n" +
+                "@ARG\n" +
+                "A=M\n" +
+                "M=D\n" +
+                "@ARG\n" +
+                "D=M\n" +
+                "@SP\n" +
+                "M=D+1\n");
+            string[] segments = { "THAT", "THIS", "ARG", "LCL" };
+            for (int i = 0; i < segments.Length; i++)
+            {
+                sw.Write(
+                    "@R13\n" +
+                    "D=M\n" +
+                    $"@{i + 1}\n" +
+                    "A=D-A\n" +
+                    "D=M\n" +
+                    $"@{segments[i]}\n" +
+                    $"M=D\n");
+            }
+            sw.Write(
+                "@R14\n" +
+                "A=M\n" +
+                "0;JMP\n");
         }
 
         private void AsmPop() =>
