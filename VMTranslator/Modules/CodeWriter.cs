@@ -14,6 +14,8 @@ namespace VMTranslator.Modules
         private StreamWriter sw;
         private string vmFileName;
         private int labelCounter = 0;
+        private int returnCounter = 0;
+
         public CodeWriter(StreamWriter sw, string vmFileName)
         {
             this.sw = sw;
@@ -184,11 +186,6 @@ namespace VMTranslator.Modules
             {
                 sw.WriteLine("//goto");
                 sw.Write(
-                    "@SP\n" +
-                    "M=M-1\n" +
-                    "@SP\n" +
-                    "A=M\n" +
-                    "D=M\n" +
                     $"@{dest}\n" +
                     "0;JMP\n");
 
@@ -197,11 +194,6 @@ namespace VMTranslator.Modules
             {
                 sw.WriteLine("//if-goto");
                 sw.Write(
-                    "@SP\n" +
-                    "M=M-1\n" +
-                    "@SP\n" +
-                    "A=M\n" +
-                    "D=M\n" +
                     $"@{dest}\n" +
                     "D;JNE\n");
             }
@@ -226,6 +218,48 @@ namespace VMTranslator.Modules
                     "M=M+1\n"
                     );
             }
+        }
+
+        public void WriteCall(string functionName, int nArgs)
+        {
+            sw.WriteLine("//call");
+            sw.Write(
+                $"@{functionName}$ret.{returnCounter}\n" +
+                "D=A\n" +
+                "@SP\n" +
+                "A=M\n" +
+                "M=D\n" +
+                "@SP\n" +
+                "M=M+1\n");
+            string[] segments = { "LCL", "ARG", "THIS", "THAT" };
+            for (int i = 0; i < segments.Length; i++)
+            {
+                sw.Write(
+                    $"@{segments[i]}\n" +
+                    "D=M\n" +
+                    "@SP\n" +
+                    "A=M\n" +
+                    "M=D\n" +
+                    "@SP\n" +
+                    "M=M+1\n");
+            }
+            sw.Write(
+                "@SP\n" +
+                "D=M\n" +
+                "@5\n" +
+                "D=D-A\n" +
+                $"@{nArgs}\n" +
+                "D=D-A\n" +
+                "@ARG\n" +
+                "M=D\n" +
+                "@SP\n" +
+                "D=M\n" +
+                "@LCL\n" +
+                "M=D\n" +
+                $"@{functionName}\n" +
+                $"0;JMP\n" +
+                $"({functionName}$ret.{returnCounter})\n");
+            returnCounter++;
         }
 
         public void WriteReturn()
@@ -254,7 +288,7 @@ namespace VMTranslator.Modules
                 "@SP\n" +
                 "M=D+1\n");
             string[] segments = { "THAT", "THIS", "ARG", "LCL" };
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < segments.Length; i++)
             {
                 sw.Write(
                     "@R13\n" +
@@ -267,7 +301,8 @@ namespace VMTranslator.Modules
             }
             sw.Write(
                 "@R14\n" +
-                "A=M\n");
+                "A=M\n" +
+                "0;JMP\n");
         }
 
         private void AsmPop() =>

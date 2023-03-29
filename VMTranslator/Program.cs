@@ -28,6 +28,7 @@ public class Program
                 case "C_LABEL": case "C_GOTO": case "C_IF-GOTO": codeWriter.WriteBranching(commandType, parser.Arg1(currentLine)); break;
                 case "C_FUNCTION": codeWriter.WriteFunction(parser.Arg1(currentLine), parser.Arg2(currentLine)); break;
                 case "C_RETURN": codeWriter.WriteReturn(); break;
+                case "C_CALL": codeWriter.WriteCall(parser.Arg1(currentLine), parser.Arg2(currentLine)); break;
                 default: throw new ArgumentException("Invalid command.");
             }
 
