@@ -2,7 +2,7 @@
 
 namespace VMTranslator.Modules
 {
-    public class CodeWriter : ICodeWriter
+    public class CodeWriter : ICodeWriter, IDisposable
     {
         private Dictionary<string, string> vmSegments = new Dictionary<string, string>()
         {
@@ -12,14 +12,25 @@ namespace VMTranslator.Modules
             { "that", "THAT" }
         };
         private StreamWriter sw;
-        private string vmFileName;
         private int labelCounter = 0;
         private int returnCounter = 0;
+        private bool disposedValue;
 
-        public CodeWriter(StreamWriter sw, string vmFileName)
+        public string vmFileName { get; set; }
+
+        public CodeWriter(string outputFileName)
         {
-            this.sw = sw;
-            this.vmFileName = vmFileName;
+            sw = new StreamWriter(outputFileName);
+        }
+
+        public void Initialization()
+        {
+            sw.Write(
+                "@256\n" +
+                "D=A\n" +
+                "@SP\n" +
+                "M=D");
+            WriteCall("sys.init", 0);
         }
 
         public void WriteArithmetic(string command)
@@ -193,6 +204,7 @@ namespace VMTranslator.Modules
             else if (command == "C_IF-GOTO")
             {
                 sw.WriteLine("//if-goto");
+                AsmPop();
                 sw.Write(
                     $"@{dest}\n" +
                     "D;JNE\n");
@@ -341,7 +353,7 @@ namespace VMTranslator.Modules
                 "M=0\n" +
                 $"@STOPCOMPARE{labelCounter}\n" +
                 "0;JMP\n" +
-                $"@COMPARE{labelCounter})\n" +
+                $"(COMPARE{labelCounter})\n" +
                 "@SP\n" +
                 "A=M\n" +
                 "M=-1\n" +
@@ -349,6 +361,26 @@ namespace VMTranslator.Modules
                 "@SP\n" +
                 "M=M+1\n");
             labelCounter++;
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    sw.Close();
+                    sw.Dispose();
+                }
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

@@ -4,20 +4,40 @@ public class Program
 {
     private static void Main(string[] args)
     {
-        string vmFileName = Path.GetFileNameWithoutExtension(args[0]);
-        string outputFilePath = $@"{Path.GetDirectoryName(args[0])}\{vmFileName}.asm";
+        if (Path.GetExtension(args[0]) == ".vm")
+        {
+            string vmFileName = Path.GetFileNameWithoutExtension(args[0]);
+            string outputFileName = $@"{Path.GetDirectoryName(args[0])}\{vmFileName}.asm";
+            using CodeWriter codeWriter = new(outputFileName);
+            codeWriter.vmFileName = vmFileName;
+            TranslateFile(args[0], codeWriter);
+        }
+        else if (Directory.Exists(args[0]))
+        {
+            string outputFileName = $@"{args[0]}\{Path.GetFileName(args[0])}.asm";
+            string[] vmFilesInDirectory = Directory.GetFiles($@"{args[0]}", "*.vm");
+            using CodeWriter codeWriter = new(outputFileName);
+            codeWriter.Initialization();
+            foreach (string file in vmFilesInDirectory)
+            {
+                codeWriter.vmFileName = Path.GetFileNameWithoutExtension(file);
+                TranslateFile(file, codeWriter);
+            }
+        }
+        else
+            throw new ArgumentException("Invalid file or directory.");
+    }
 
-        StreamReader sr = new(Path.GetFullPath(args[0]));
+    private static void TranslateFile(string filePath, CodeWriter codeWriter)
+    {
+        StreamReader sr = new(filePath);
         Parser parser = new(sr);
-
-        StreamWriter sw = new(outputFilePath);
-        CodeWriter codeWriter = new(sw, vmFileName);
 
         while (!sr.EndOfStream)
         {
             string currentLine = sr.ReadLine();
-
             currentLine = parser.CleanCurrentLine(currentLine);
+
             if (currentLine == "")
                 continue;
             string commandType = parser.CommandType(currentLine);
@@ -31,9 +51,6 @@ public class Program
                 case "C_CALL": codeWriter.WriteCall(parser.Arg1(currentLine), parser.Arg2(currentLine)); break;
                 default: throw new ArgumentException("Invalid command.");
             }
-
         }
-        sw.Close();
-        Console.WriteLine($"{vmFileName} converted to assembly.");
     }
 }
